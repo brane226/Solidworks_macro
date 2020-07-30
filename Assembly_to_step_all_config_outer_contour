@@ -1,0 +1,52 @@
+'Used in Solidworks 2020 www.branework.com
+'Open an SLDASM with multiple configurations - this macro will save all your configurations as SLDPRT and STEP with name of SLDASM + configuration name
+'Save this as macro in Solidworks macro editor
+
+Dim swApp As SldWorks.SldWorks
+Dim swModel As SldWorks.ModelDoc2
+Dim swModel2 As SldWorks.ModelDoc2
+
+Dim vConfigNames As Variant
+Dim strName As String
+Dim swDocSpec As SldWorks.DocumentSpecification
+Dim swDocSpec2 As SldWorks.DocumentSpecification
+
+Dim strNewPath As String
+Dim strNewPathStep As String
+
+Dim intErrors As Long
+Dim intWarnings As Long
+
+Sub main()
+
+    Set swApp = Application.SldWorks
+    Set swModel = swApp.ActiveDoc
+    Debug.Print swModel.GetPathName
+    Set swDocSpec = swApp.GetOpenDocSpec(swModel.GetPathName)   
+    
+    vConfigNames = swModel.GetConfigurationNames
+    Dim strNewPath As String
+    Dim i As Integer
+    Dim j As Integer
+        
+    For i = 0 To UBound(vConfigNames)
+        swModel.ShowConfiguration2 vConfigNames(i)
+        strNewPath = Replace(swModel.GetPathName, ".SLDASM", " " & vConfigNames(i) & ".SLDPRT")
+        strNewPathStep = Replace(swModel.GetPathName, ".SLDASM", " " & vConfigNames(i) & ".STEP")
+        swModel.ShowConfiguration2 vConfigNames(i)
+
+        swModel.SaveAs3 strNewPath, swSaveAsCurrentVersion, swSaveAsOptions_Copy
+        Set swDocSpec2 = swApp.GetOpenDocSpec(strNewPath)
+        Set swModel2 = swApp.OpenDoc7(swDocSpec2)
+           For j = 0 To UBound(vConfigNames)
+                If Not i = j Then swModel2.DeleteConfiguration2 vConfigNames(j)
+
+                swModel2.Save3 0, intErrors, intWarnings
+                swModel2.SaveAs3 strNewPathStep, swSaveAsCurrentVersion, 1
+           Next j
+           
+        swApp.CloseDoc swModel2.GetTitle
+        
+    Next i
+
+End Sub
